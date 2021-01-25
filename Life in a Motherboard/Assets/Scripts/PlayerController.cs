@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
 
     public Transform groundCheck;
     public Transform facingCheck;
+    public Transform grabbingPoint;
     public float groundCheckRadius;
     public LayerMask whatIsGround;
 
@@ -27,18 +28,17 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody2D rb;
     private Animator anim;
-    private SpriteRenderer renderer;
     private bool flipped;
 
     private List<EnergyCube> energyCubes;
-    private EnergyCube energyCube;
+    private EnergyCube closestCube;
+    private EnergyCube grabbedCube;
     #endregion
 
     private void Start()
     {
         rb = gameObject.GetComponent<Rigidbody2D>();
         anim = gameObject.GetComponent<Animator>();
-        renderer = gameObject.GetComponent<SpriteRenderer>();
 
         energyCubes = new List<EnergyCube>();
     }
@@ -49,37 +49,48 @@ public class PlayerController : MonoBehaviour
 
         anim.SetBool("isJumping", !isGrounded);
 
-        // Increase/decrease size of closest cube in the direction the player is facing.
+        // Do energy cube logic
         if (energyCubes.Count != 0)
         {
             ClosestCube();
-
-            if (Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.JoystickButton7))
-            {
-                Transfer();
-            }
-            if (Input.GetKey(KeyCode.Mouse1) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.JoystickButton6))
-            {
-                Drain();
-            }
+            Transfer();
+            Drain();
+            Grab();
+            Throw();
         }
 
         energyTank.localScale = new Vector3(1, energy / energyCap, 1);
 
         if (energy >= energyCap)
             Die();
-
-        Grab();
     }
 
     private void Grab()
+    {
+        if (!(Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.JoystickButton0)))
+            return;
+
+        if (grabbedCube != null)
+            return;
+
+        closestCube.transform.SetParent(grabbingPoint);
+        closestCube.transform.position = grabbingPoint.position;
+
+        grabbedCube = closestCube;
+
+        var cubeRB = closestCube.GetComponent<Rigidbody2D>();
+
+        cubeRB.bodyType = RigidbodyType2D.Kinematic;
+    }
+
+    private void Throw()
     {
 
     }
 
     private void Jump()
     {
-        if ((Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.JoystickButton1)) && isGrounded)
+        if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton1)) && isGrounded)
         {
             rb.velocity = Vector2.up * jumpForce;
         }
@@ -99,7 +110,7 @@ public class PlayerController : MonoBehaviour
 
             if (distance < smallestDistance)
             {
-                energyCube = cube;
+                closestCube = cube;
                 smallestDistance = distance;
             }
         }
@@ -107,52 +118,58 @@ public class PlayerController : MonoBehaviour
 
     private void Transfer() // Transfer energy from player to energy ball
     {
+        if (!(Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.JoystickButton7)))
+            return;
+
+
         if (energy >= drainSpeed)
         {
-            if (energyCube.energy + drainSpeed * efficiency <= energyCube.maximumEnergy)
+            if (closestCube.energy + drainSpeed * efficiency <= closestCube.maximumEnergy)
             {
                 energy -= drainSpeed;
-                energyCube.energy += drainSpeed * efficiency;
+                closestCube.energy += drainSpeed * efficiency;
             }
             else
             {
-                energy -= energyCube.maximumEnergy - energyCube.energy;
-                energyCube.energy = energyCube.maximumEnergy;
+                energy -= closestCube.maximumEnergy - closestCube.energy;
+                closestCube.energy = closestCube.maximumEnergy;
             }
         }
         else if (energy > 0)
         {
-            if (energyCube.energy + energy * efficiency <= energyCube.maximumEnergy)
+            if (closestCube.energy + energy * efficiency <= closestCube.maximumEnergy)
             {
                 energy = 0;
-                energyCube.energy += energy * efficiency;
+                closestCube.energy += energy * efficiency;
             }
             else
             {
-                energy -= energyCube.maximumEnergy - energyCube.energy;
-                energyCube.energy = energyCube.maximumEnergy;
+                energy -= closestCube.maximumEnergy - closestCube.energy;
+                closestCube.energy = closestCube.maximumEnergy;
             }
         }
     }
 
     private void Drain() // Drain energy from cube
     {
-        if (energyCube.energy - drainSpeed >= energyCube.minimumEnergy)
+        if (!(Input.GetKey(KeyCode.Mouse1) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.JoystickButton6)))
+            return;
+
+        if (closestCube.energy - drainSpeed >= closestCube.minimumEnergy)
         {
             energy += drainSpeed * efficiency;
-            energyCube.energy -= drainSpeed;
+            closestCube.energy -= drainSpeed;
         }
         else
         {
-            energy += energyCube.energy - energyCube.minimumEnergy;
-            energyCube.energy = energyCube.minimumEnergy;
+            energy += closestCube.energy - closestCube.minimumEnergy;
+            closestCube.energy = closestCube.minimumEnergy;
         }
     }
 
     private void Die()
     {
         // Death code in here
-        print("died");
     }
 
     private void FixedUpdate()
