@@ -78,14 +78,16 @@ public class PlayerController : MonoBehaviour
 
         grabbedCube = closestCube;
 
-        var cubeRB = closestCube.GetComponent<Rigidbody2D>();
-
-        cubeRB.bodyType = RigidbodyType2D.Kinematic;
+        closestCube.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
     }
 
     private void Throw()
     {
-
+        if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.Mouse2) || Input.GetKeyDown(KeyCode.JoystickButton4) || Input.GetKeyDown(KeyCode.JoystickButton5))
+        {
+            closestCube.Throw(rb.velocity);
+            grabbedCube = null;
+        }
     }
 
     private void Jump()
@@ -121,6 +123,8 @@ public class PlayerController : MonoBehaviour
         if (!(Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.JoystickButton7)))
             return;
 
+        if (!closestCube.CanGrow())
+            return;
 
         if (energy >= drainSpeed)
         {

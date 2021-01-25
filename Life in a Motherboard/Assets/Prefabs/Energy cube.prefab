@@ -147,6 +147,10 @@ MonoBehaviour:
   energy: 100
   minimumEnergy: 25
   maximumEnergy: 500
+  whatIsBoundaries:
+    serializedVersion: 2
+    m_Bits: 512
+  throwVelocityOrigin: 2
 --- !u!1 &8870802423328394091
 GameObject:
   m_ObjectHideFlags: 0
