@@ -18,8 +18,11 @@ public class PlayerController : MonoBehaviour
     public Transform energyTank;
     public float energy;
     public float energyCap;
+    public float maxCarryCap;
     public float drainSpeed;
     public float efficiency;
+
+    public GameObject energyCube;
     #endregion
 
     #region private
@@ -52,47 +55,80 @@ public class PlayerController : MonoBehaviour
         // Do energy cube logic
         if (energyCubes.Count != 0)
         {
+            bool grabbedThisFrame = false;
+
             ClosestCube();
-            Transfer();
-            Drain();
-            Grab();
-            Throw();
+            if (closestCube != null)
+            {
+                Drain();
+                Transfer();
+
+                grabbedThisFrame = Grab();
+            }
+
+            if (!grabbedThisFrame)
+                Throw();
+
+            print(grabbedCube);
         }
 
         energyTank.localScale = new Vector3(1, energy / energyCap, 1);
 
         if (energy >= energyCap)
             Die();
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Instantiate(energyCube, new Vector3(5, -5, 0), Quaternion.identity);
+        }
     }
 
-    private void Grab()
+    private bool Grab()
     {
-        if (!(Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.JoystickButton0)))
-            return;
+        if (!(Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.K) || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.JoystickButton0) || Input.GetKeyDown(KeyCode.JoystickButton4) || Input.GetKeyDown(KeyCode.JoystickButton5)))
+            return false;
 
         if (grabbedCube != null)
-            return;
+            return false;
 
-        closestCube.transform.SetParent(grabbingPoint);
-        closestCube.transform.position = grabbingPoint.position;
+        if (closestCube.transform.localScale.x >= maxCarryCap)
+            return false;
 
         grabbedCube = closestCube;
+        grabbedCube.transform.SetParent(grabbingPoint);
+        grabbedCube.transform.position = grabbingPoint.position;
+        grabbedCube.transform.rotation = Quaternion.identity;
 
-        closestCube.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
+        var _rb = grabbedCube.GetComponent<Rigidbody2D>();
+
+        _rb.bodyType = RigidbodyType2D.Kinematic;
+
+        _rb.rotation = 0;
+        _rb.angularVelocity = 0;
+        _rb.velocity = Vector2.zero;
+
+        closestCube = null;
+
+        return true;
     }
+
 
     private void Throw()
     {
-        if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.Mouse2) || Input.GetKeyDown(KeyCode.JoystickButton4) || Input.GetKeyDown(KeyCode.JoystickButton5))
-        {
-            closestCube.Throw(rb.velocity);
-            grabbedCube = null;
-        }
+        if (!(Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.K) || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.JoystickButton0) || Input.GetKeyDown(KeyCode.JoystickButton4) || Input.GetKeyDown(KeyCode.JoystickButton5)))
+            return;
+
+        if (grabbedCube == null)
+            return;
+
+        grabbedCube.Throw(rb.velocity * 0.75f + new Vector2(transform.localScale.x, transform.localScale.y));
+
+        grabbedCube = null;
     }
 
     private void Jump()
     {
-        if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.JoystickButton1)) && isGrounded)
+        if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.JoystickButton1)) && isGrounded)
         {
             rb.velocity = Vector2.up * jumpForce;
         }
@@ -106,8 +142,14 @@ public class PlayerController : MonoBehaviour
     {
         float smallestDistance = 1000;
 
+        if (closestCube == grabbedCube)
+            closestCube = null;
+
         foreach (EnergyCube cube in energyCubes)
         {
+            if (cube == grabbedCube)
+                continue;
+
             float distance = Vector3.Distance(cube.transform.position, facingCheck.position);
 
             if (distance < smallestDistance)
@@ -118,9 +160,26 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void Drain() // Drain energy from cube
+    {
+        if (!(Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.L) || Input.GetKey(KeyCode.JoystickButton7)))
+            return;
+
+        if (closestCube.energy - drainSpeed >= closestCube.minimumEnergy)
+        {
+            energy += drainSpeed * efficiency;
+            closestCube.energy -= drainSpeed;
+        }
+        else
+        {
+            energy += closestCube.energy - closestCube.minimumEnergy;
+            closestCube.energy = closestCube.minimumEnergy;
+        }
+    }
+
     private void Transfer() // Transfer energy from player to energy ball
     {
-        if (!(Input.GetKey(KeyCode.Mouse0) || Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow) || Input.GetKey(KeyCode.JoystickButton7)))
+        if (!(Input.GetKey(KeyCode.Mouse1) || Input.GetKey(KeyCode.J) || Input.GetKey(KeyCode.JoystickButton6)))
             return;
 
         if (!closestCube.CanGrow())
@@ -154,23 +213,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void Drain() // Drain energy from cube
-    {
-        if (!(Input.GetKey(KeyCode.Mouse1) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow) || Input.GetKey(KeyCode.JoystickButton6)))
-            return;
-
-        if (closestCube.energy - drainSpeed >= closestCube.minimumEnergy)
-        {
-            energy += drainSpeed * efficiency;
-            closestCube.energy -= drainSpeed;
-        }
-        else
-        {
-            energy += closestCube.energy - closestCube.minimumEnergy;
-            closestCube.energy = closestCube.minimumEnergy;
-        }
-    }
-
     private void Die()
     {
         // Death code in here
@@ -199,12 +241,19 @@ public class PlayerController : MonoBehaviour
     private void OnTriggerStay2D(Collider2D other)
     {
         if (other.CompareTag("EnergyCube") && !energyCubes.Contains(other.gameObject.GetComponentInParent<EnergyCube>()))
-                energyCubes.Add(other.gameObject.GetComponentInParent<EnergyCube>());
+        {
+            energyCubes.Add(other.gameObject.GetComponentInParent<EnergyCube>());
+        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (other.CompareTag("EnergyCube"))
+        {
             energyCubes.Remove(other.gameObject.GetComponentInParent<EnergyCube>());
+
+            if (closestCube = other.gameObject.GetComponentInParent<EnergyCube>())
+                closestCube = null;
+        }
     }
 }

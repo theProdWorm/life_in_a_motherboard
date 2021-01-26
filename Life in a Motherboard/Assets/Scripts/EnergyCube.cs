@@ -1,16 +1,20 @@
-﻿using System.Collections;
+﻿using System;
 using UnityEngine;
 
 public class EnergyCube : MonoBehaviour
 {
+    const float appropriateNameForAConstantFloarVariable = 0.0078947368421f;
+
     public float energy;
     public float minimumEnergy;
     public float maximumEnergy;
 
     public LayerMask whatIsBoundaries;
+    public float shellRadius;
 
-    public float throwVelocityOrigin;
-    private float throwVelocity;
+    public float throwForceOrigin;
+
+    private float throwForce;
 
     private float energyDelta;
 
@@ -23,26 +27,22 @@ public class EnergyCube : MonoBehaviour
 
     private void Update()
     {
-        // Default: 100 energy
-        // Scale = energy / 100
+        transform.localScale = Vector3.one * (appropriateNameForAConstantFloarVariable * energy);
 
-        transform.localScale = Vector3.one * (energy / 100);
-
-        rb.mass = transform.localScale.magnitude * 15;
+        throwForce = throwForceOrigin / Mathf.Pow(transform.localScale.x, 1 / 3);
 
         if (energyDelta == energy)
             rb.gravityScale = 2;
         else
             rb.gravityScale = 0;
 
-        throwVelocity = throwVelocityOrigin * transform.localScale.x;
+        rb.mass = transform.localScale.magnitude * 15;
 
         energyDelta = energy;
     }
-
     public bool CanGrow()
     {
-        bool canGrow = !Physics2D.OverlapBox(transform.position, transform.localScale, 0, whatIsBoundaries);
+        bool canGrow = !(Physics2D.OverlapBoxAll(transform.position, transform.localScale, 0, whatIsBoundaries).Length > 1);
 
         return canGrow;
     }
@@ -53,6 +53,6 @@ public class EnergyCube : MonoBehaviour
 
         rb.bodyType = RigidbodyType2D.Dynamic;
 
-        rb.AddForce(velocity);
+        rb.velocity = new Vector2(velocity.x * throwForce, velocity.y * throwForce);
     }
 }

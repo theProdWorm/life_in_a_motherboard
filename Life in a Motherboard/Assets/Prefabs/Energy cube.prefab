@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 8870802421667238783}
   m_Layer: 8
   m_Name: Energy cube
-  m_TagString: Untagged
+  m_TagString: PhysicsObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8870802421667238768}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.46, y: -6.11, z: 0}
+  m_LocalPosition: {x: -3.5, y: -6, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 8870802423328394090}
@@ -98,7 +98,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0.01105693}
+  m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -109,7 +109,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.975, y: 0.95288616}
+  m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
 --- !u!50 &8870802421667238780
 Rigidbody2D:
@@ -127,11 +127,11 @@ Rigidbody2D:
   m_LinearDrag: 0
   m_AngularDrag: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 1bf480b6e10b79047ba1844b044b304c, type: 2}
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 4
+  m_Constraints: 0
 --- !u!114 &8870802421667238783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -150,7 +150,8 @@ MonoBehaviour:
   whatIsBoundaries:
     serializedVersion: 2
     m_Bits: 512
-  throwVelocityOrigin: 2
+  shellRadius: 0.02
+  throwForceOrigin: 2
 --- !u!1 &8870802423328394091
 GameObject:
   m_ObjectHideFlags: 0

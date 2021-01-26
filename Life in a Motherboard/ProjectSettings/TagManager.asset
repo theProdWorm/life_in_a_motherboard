@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - EnergyCube
+  - PhysicsObject
+  - Red plopp
+  - Green plopp
+  - Yellow plopp
   layers:
   - Default
   - TransparentFX
